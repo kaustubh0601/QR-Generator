@@ -42,6 +42,28 @@ python qr_generator_cli.py --text "Your content here" --output "qr_code.png"
 - **SMS**: SMS with phone number and message
 - **WiFi**: WiFi network credentials
 - **vCard**: Contact information
+- **UPI Payment**: Recipient UPI ID and prefilled amount in INR
+
+### UPI payment QR codes
+
+Run `python qr_generator_gui.py`, select **UPI Payment**, enter the recipient's
+UPI ID (for example `name@bank`) and a positive amount in INR (for example
+`150.50`). Optionally enter the payee name, then click **Generate QR Code**.
+Use **Save QR Code** to export the image.
+
+The same option is available from the command line:
+
+```bash
+python qr_generator_cli.py --upi "name@bank" --amount "150.50" --payee-name "My Shop" --output "payment.png"
+```
+
+Scan the QR using a UPI payment app to prefill the supplied recipient and amount.
+The payer must approve the payment in that app. Amount editability depends on the
+payment app; this generator cannot enforce payment or confirm its completion.
+UPI ID validation checks format only, not whether the account exists.
+
+Python callers can use `QRGenerator().create_upi_qr("name@bank", "150.50")`
+to save a payment QR, or `create_upi_data(...)` to get its payment URI.
 
 ## Technical Details
 

@@ -90,7 +90,8 @@ class QRGeneratorGUI:
             ("Phone", "phone"),
             ("SMS", "sms"),
             ("WiFi", "wifi"),
-            ("Contact (vCard)", "vcard")
+            ("Contact (vCard)", "vcard"),
+            ("UPI Payment", "upi")
         ]
         
         for i, (text, value) in enumerate(qr_types):
@@ -242,7 +243,20 @@ Created with Python, qrcode library, and Tkinter.
         
         qr_type = self.qr_type.get()
         
-        if qr_type == "url":
+        if qr_type == "upi":
+            for row, (label, attr) in enumerate([
+                ("UPI ID:", "upi_id_entry"),
+                ("Amount (INR):", "upi_amount_entry"),
+                ("Payee name (optional):", "upi_name_entry"),
+            ]):
+                ttk.Label(self.input_frame, text=label).grid(row=row, column=0, sticky=tk.W)
+                entry = ttk.Entry(self.input_frame, width=30)
+                entry.grid(row=row, column=1, sticky=tk.W, padx=(5, 0))
+                setattr(self, attr, entry)
+            ttk.Label(self.input_frame, text="Scan in a UPI app to prefill recipient and amount.",
+                      wraplength=310).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=(8, 0))
+
+        elif qr_type == "url":
             ttk.Label(self.input_frame, text="URL:").grid(row=0, column=0, sticky=tk.W)
             self.url_entry = ttk.Entry(self.input_frame, width=40)
             self.url_entry.grid(row=0, column=1, sticky=tk.W, padx=(5, 0))
@@ -329,6 +343,10 @@ Created with Python, qrcode library, and Tkinter.
     
     def generate_qr(self):
         """Generate QR code based on current settings."""
+        self.current_qr_image = None
+        self.current_file_path = None
+        self.preview_canvas.delete("all")
+        self.info_text.delete(1.0, tk.END)
         try:
             # Get data based on type
             data = self.get_qr_data()
@@ -374,6 +392,11 @@ This is a STATIC QR code that will never expire!"""
         """Get QR data based on selected type."""
         qr_type = self.qr_type.get()
         
+        if qr_type == "upi":
+            return self.qr_gen.create_upi_data(
+                self.upi_id_entry.get(), self.upi_amount_entry.get(), self.upi_name_entry.get()
+            )
+
         try:
             if qr_type == "url":
                 return self.url_entry.get().strip()

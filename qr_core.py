@@ -11,6 +11,8 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from typing import Optional, Tuple, Union
 import re
+from decimal import Decimal
+from urllib.parse import urlencode, quote
 
 
 class QRGenerator:
@@ -132,6 +134,30 @@ class QRGenerator:
         
         return filepath
     
+    def create_upi_data(self, upi_id: str, amount: str, payee_name: str = "") -> str:
+        """Build a UPI payment URI with a prefilled INR amount and recipient."""
+        upi_id = upi_id.strip()
+        if not re.fullmatch(r'[A-Za-z0-9._-]+@[A-Za-z0-9.-]+', upi_id):
+            raise ValueError("Enter a valid UPI ID, for example name@bank.")
+        amount = str(amount).strip()
+        if not re.fullmatch(r'[0-9]+(?:\.[0-9]{1,2})?', amount):
+            raise ValueError("Enter an amount with up to two decimal places, for example 150.50.")
+        value = Decimal(amount)
+        if value <= 0:
+            raise ValueError("Amount must be greater than zero.")
+        params = {
+            'pa': upi_id,
+            'pn': payee_name.strip() or upi_id,
+            'am': format(value, '.2f'),
+            'cu': 'INR',
+        }
+        return 'upi://pay?' + urlencode(params, quote_via=quote)
+
+    def create_upi_qr(self, upi_id: str, amount: str, payee_name: str = "", **kwargs) -> str:
+        """Generate and save a QR for a payment to the supplied UPI ID."""
+        data = self.create_upi_data(upi_id, amount, payee_name)
+        return self.save_qr_code(data, f"upi_qr_{self._sanitize_filename(upi_id)}", **kwargs)
+
     def create_url_qr(self, url: str, **kwargs) -> str:
         """Create QR code for URL with validation."""
         if not self._is_valid_url(url):

@@ -39,9 +39,12 @@ Examples:
     data_group.add_argument('--text', help='Generate QR code for plain text')
     data_group.add_argument('--email', help='Generate QR code for email address')
     data_group.add_argument('--phone', help='Generate QR code for phone number')
+    data_group.add_argument('--upi', help='Recipient UPI ID for a payment QR code')
     data_group.add_argument('--wifi', action='store_true', help='Generate QR code for WiFi (requires --ssid and --password)')
     
     # Additional data for specific types
+    parser.add_argument('--amount', help='Payment amount in INR (required with --upi)')
+    parser.add_argument('--payee-name', default='', help='Optional payee name (used with --upi)')
     parser.add_argument('--subject', help='Email subject (used with --email)')
     parser.add_argument('--body', help='Email body (used with --email)')
     parser.add_argument('--message', help='SMS message (used with --sms)')
@@ -80,6 +83,8 @@ Examples:
     try:
         # Handle batch processing
         if args.batch:
+            if args.upi is not None:
+                parser.error("--upi does not support --batch")
             process_batch(qr_gen, args)
             return
         
@@ -94,7 +99,12 @@ Examples:
                 parser.error("--vcard requires --name")
         
         # Generate QR code based on type
-        if args.url:
+        if args.upi is not None:
+            if args.amount is None:
+                parser.error("--upi requires --amount")
+            data = qr_gen.create_upi_data(args.upi, args.amount, args.payee_name)
+            filename = args.output
+        elif args.url:
             data = args.url
             filename = args.output
         elif args.text:
